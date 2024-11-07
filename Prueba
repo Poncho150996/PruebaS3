@@ -1,0 +1,117 @@
+<?php
+   require 'vendor/autoload.php';
+   require 'env.php';
+
+//    $AWS_ACCESS_KEY_ID = AWS_ACCESS_KEY_ID;
+//    $AWS_SECRET_ACCESS_KEY = AWS_SECRET_ACCESS_KEY;
+
+   use Aws\S3\S3Client;
+   use Aws\S3\Exception\AwsException;
+
+   //Create a S3Client
+   $s3Client = new S3Client([
+          'region' => 'us-west-1',
+          'version' => 'latest',
+          'credentials' => [
+               'key' => AWS_ACCESS_KEY_ID,
+               'secret' => AWS_SECRET_ACCESS_KEY
+          ]
+   ]);
+
+   /**
+    * List your Amazon S3 buckets.
+    */
+   try{
+      
+      //Listing all S3 Bucket
+      $buckets = $s3Client->listBuckets();
+      foreach ($buckets['Buckets'] as $bucket) {
+          echo $bucket['Name'] . "<br>";
+      }
+   }catch(S3Exception $e){
+      echo $e->vgetMessage()."\n";
+   }
+
+
+   
+   /**
+    * PUT Object in Amazon S3 buckets.
+    */
+
+   #$fileName = "prueba.png" . uniqid();
+   $fileName = "PRUEBA.pdf";
+   $bucketName = 'blueservices-respaldosbd';
+   echo "$fileName<br>";
+   try {
+      $s3Client->putObject([
+            'Bucket' => $bucketName,
+            'Key' => $fileName,
+            'SourceFile' => __DIR__ . '/prueba.png'
+      ]);
+      echo "Uploaded $fileName to $bucketName.<br>";
+   } catch (Exception $exception) {
+      echo "Failed to upload $fileName with error: " . $exception->getMessage();
+            exit("Please fix error with file upload before continuing.");
+   }
+
+   /**
+    * List Objects in Amazon S3 buckets.
+    */
+
+   try {
+            $contents = $s3Client->listObjectsV2([
+                'Bucket' => $bucketName,
+            ]);
+            echo "The contents of your bucket are: <br>";
+            foreach ($contents['Contents'] as $content) {
+                #if($content['Key'] == 'prueba.png' OR  $content['Key'] == '/prueba.png')
+                  #echo $content['Key'] . "<br>";
+               #var_dump($contents);
+            }
+        } catch (Exception $exception) {
+            echo "Failed to list objects in $this->bucketName with error: " . $exception->getMessage();
+            exit("Please fix error with listing objects before continuing.");
+        }
+
+
+   /**
+    * DELETE Objects in Amazon S3 buckets.
+    */
+   $fileName = "prueba.png";
+   $bucketName = 'blueservices-respaldosbd';
+   try {
+      $objects[] = ['Key' => $fileName];
+
+       /*$s3Client->deleteObjects([
+           'Bucket' => $bucketName,
+           'Delete' => [
+             'Objects' => $objects,
+          ],
+       ]);*/
+       
+        echo "Deleted $fileName from $bucketName.<br>";
+   } catch (Exception $exception) {
+      echo "Failed to delete $fileName from $bucketName with error: " . $exception->getMessage();
+      exit("Please fix error with object deletion before continuing.");
+   }
+
+   /**
+    * GET Object from Amazon S3 buckets.
+    */
+   $fileName = "prueba.png";
+   try {
+            $file = $s3Client->getObject([
+                'Bucket' => $bucketName,
+                'Key' => $fileName,
+            ]);
+            $body = $file->get('Body');
+            $body->rewind();
+            echo "Downloaded the file and it begins with: {$body->read(26)}";
+             
+        } catch (Exception $exception) {
+            echo "Failed to download $fileName from $bucketName with error: " . $exception->getMessage();
+            exit("Please fix error with file downloading before continuing.");
+        }
+
+   
+?>
